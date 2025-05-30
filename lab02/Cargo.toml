@@ -1,0 +1,9 @@
+[package]
+name = "TOSS2025-lab2-软2304-景奕瑞-20232241467"
+version = "0.1.0"
+edition = "2024"
+
+[dependencies]
+eframe = "0.22"
+egui = "0.22"
+winapi = { version = "0.3", features = ["winuser", "windef", "libloaderapi"] }
