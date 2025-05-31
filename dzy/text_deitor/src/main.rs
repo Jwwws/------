@@ -1,5 +1,5 @@
 use iced::Theme;
-use iced::{Sandbox,Settings,Length};
+use iced::{Command,executor,Application,Settings,Length};
 use iced::widget::{container, horizontal_space, row, text, text_editor};
 use iced::widget::column;
 fn main() -> iced::Result{
@@ -14,22 +14,32 @@ enum Message{
     Edit(text_editor::Action)
 }
 
-impl Sandbox for Editor{
+impl Application for Editor{
+    type Executor = executor::Default;
     type Message=Message;
+    type Theme = Theme;
+    type Flags = ();
 
-    fn new()->Self{
-        Self{
+    fn new(_flags: Self::Flags)->(Self,Command<Message>){
+        (
+            Self{
             content: text_editor::Content::new(),
-        }
+        },
+        Command::none()
+    )
     }
 
     fn title(&self)->String{
         String::from("Text Editor")
     }
-    fn update(&mut self, message:Message){
+    fn update(&mut self, message:Message)->Command<Message>{
         match message{
-            Message::Edit(action)=>self.content.perform(action)
+            Message::Edit(action)=>{
+                self.content.perform(action);
+                Command::none()
+            }
         }
+
     }
 
         fn view(&self) -> iced::Element<'_, Message> {
