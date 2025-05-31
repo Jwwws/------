@@ -1,17 +1,21 @@
-
-use std::sync::Arc;
-use std::path::{Path,PathBuf};
+use iced::widget::tooltip::Position;
+use iced::{application, highlighter, theme, Element, Font, Length, Task, Theme};
+use iced::widget::{button, column, container, horizontal_space, pick_list, row, text, text_editor, tooltip};
+use std::ffi;
+use std::path::{Path, PathBuf};
 use std::io::ErrorKind;
-use iced::{ executor, Application, Command, Length, Settings, Theme};
-use iced::widget::{button,column,container, horizontal_space, row, text, text_editor};
-fn main() -> iced::Result{
-    Editor::run(Settings::default())
+use std::sync::Arc;
+fn main() -> iced::Result{ 
+    application(Editor::title,Editor::update,Editor::view)
+    .theme(Editor::theme)
+    .run_with(Editor::new)
 }
 
 struct Editor{
     content: text_editor::Content,
     error: Option<Error>,
     path: Option<PathBuf>,
+    theme:highlighter::Theme,
 }
 #[derive(Debug,Clone)]
 enum Message{
@@ -21,77 +25,86 @@ enum Message{
     New,
     Save,
     FiledSaved(Result<PathBuf,Error>),
+    ThemeSelected(highlighter::Theme),
 }
 
-impl Application for Editor{
-    type Executor = executor::Default;
-    type Message=Message;
-    type Theme = Theme;
-    type Flags = ();
-
-    fn new(_flags: Self::Flags)->(Self,Command<Message>){
+impl  Editor{
+  
+    fn new()->(Self,Task<Message>){
         (
             Self{
             content: text_editor::Content::with_text(include_str!("./main.rs")),
             error: None,
             path: None,
+            theme: highlighter::Theme::SolarizedDark,
         },
-        Command::perform(load_file(default_load_file()),Message::FileOpened)
+        Task::perform(load_file(default_load_file()),Message::FileOpened)
         )
     }
 
     fn title(&self)->String{
         String::from("Text Editor")
     }
-    fn update(&mut self, message:Message)->Command<Message>{
+    fn update(&mut self, message:Message)->Task<Message>{
         match message{
             Message::Edit(action)=>{
                 self.content.perform(action);
-                Command::none()
+                Task::none()
             }
             Message::FileOpened(Ok((path,contents)))=>{
                 self.content = text_editor::Content::with_text(&contents);
                 self.path = Some(path);
-                Command::none()
+                Task::none()
             }
             Message::FileOpened(Err(error))=>{
                 self.error = Some(error);
-                Command::none()
+                Task::none()
             }
             Message::Open=>{
-                Command::perform(pick_flie(),Message::FileOpened)
+                Task::perform(pick_flie(),Message::FileOpened)
             }
             Message::New=>{
                 self.content = text_editor::Content::new();
                 self.path = None;
-                Command::none()
+                Task::none()
             }
             Message::Save=>{
                 let contents=self.content.text();
-                Command::perform(save_file(self.path.clone(),contents), Message::FiledSaved)
+                Task::perform(save_file(self.path.clone(),contents), Message::FiledSaved)
             }
             Message::FiledSaved(Ok(path))=>{
                 self.path = Some(path);
-                Command::none()
+                Task::none()
             }
             Message::FiledSaved(Err(error))=>{
                 self.error = Some(error);
-                Command::none()
+                Task::none()
             }
+            Message::ThemeSelected(theme)=>{
+                self.theme=theme;
+                Task::none()
+            }
+        }
             
         }
 
-    }
+    
 
-    fn view(&self) -> iced::Element<'_, Message> {
-        let controls =row!{
+    fn view(&self) -> Element<'_, Message> {
+        let controls =row![
             button("Open").on_press(Message::Open),
             button("New").on_press(Message::New),
             button("Save").on_press(Message::Save),
-        }.spacing(10);
+            horizontal_space(),
+            pick_list(highlighter::Theme::ALL,Some(self.theme),Message::ThemeSelected),
+        ].spacing(10);
         let input_content = text_editor(&self.content)
             .on_action(Message::Edit)
-            .height(Length::Fill);
+            .height(Length::Fill)
+            .highlight(self.path.as_deref()
+            .and_then(Path::extension)
+            .and_then(ffi::OsStr::to_str)
+            .unwrap_or("rs"), self.theme);
             
         let poisition = {
         let (line, column) = &self.content.cursor_position();
@@ -107,24 +120,18 @@ impl Application for Editor{
             }
         };
     let status_bar = row!(file_path,horizontal_space(), poisition);
-    container(column!(controls,input_content, status_bar)).padding(10).into()
-}
+    container(column![controls,input_content, status_bar]).padding(10).into()
+    }
 
-   
-        
-
-    fn theme(&self)-> iced::Theme{
+fn theme(&self) -> iced::Theme {
+    if self.theme.is_dark(){
         Theme::Dark
+    }else{
+        Theme::Light
     }
     
-    fn style(&self) -> iced::theme::Application {
-        iced::theme::Application::default()
-    }
-    
-    fn scale_factor(&self) -> f64 {
-        1.0
-    }
-    
+        
+}
 }
 
 #[derive(Debug,Clone)]
