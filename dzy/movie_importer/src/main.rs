@@ -1,4 +1,5 @@
 use rfd::FileDialog;
+use serde::{Deserialize, Serialize};
 use std::process;
 use std::{error::Error,fs, path::PathBuf};
 use regex::Regex;
@@ -20,10 +21,16 @@ fn read_text_to_json(file_path: &std::path::PathBuf) -> Result<PathBuf, Box<dyn 
             }
         }
     }
-    Ok(PathBuf::new())
+    save_to_json(movies)
 }
-fn save_to_json(movies:Vec<movie>)->Result<PathBuf,Box<dyn Error>>{
-    
+fn save_to_json(movies:Vec<Movie>)-> Result<PathBuf, Box<dyn Error>> {
+    let json_str=serde_json::to_string_pretty(&movies)?;
+    let path=FileDialog::new().add_filter("JSON Files",&["json"])
+    .set_title("Save data to json file")
+    .set_directory("C:\\Users\\Jw\\Desktop")
+    .save_file().ok_or_else(||"No save location selected".to_string())?;
+    fs::write(&path, json_str)?;
+    Ok(path)
 }
 fn parse_movie(disc_no:u32,line:&str,re:&Regex)->Option<Movie>{
     re.captures(line).map(|caps|{
@@ -40,6 +47,7 @@ fn parse_movie(disc_no:u32,line:&str,re:&Regex)->Option<Movie>{
 fn disc_number(line: &str,re:&Regex) -> Option<u32> {
    re.captures(line).map(|caps| caps.get(1).unwrap().as_str().parse::<u32>().unwrap())
 }
+#[derive(Debug,Serialize,Deserialize)]
 struct Movie {
     disc:u32,
     year:String,
