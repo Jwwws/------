@@ -16,7 +16,8 @@ struct Editor{
 enum Message{
     Edit(text_editor::Action),
     FileOpened(Result<Arc<String>,Error>),
-    Open
+    Open,
+    New,
 }
 
 impl Application for Editor{
@@ -55,18 +56,24 @@ impl Application for Editor{
             Message::Open=>{
                 Command::perform(pick_flie(),Message::FileOpened)
             }
+            Message::New=>{
+                self.content = text_editor::Content::new();
+                Command::none()
+            }
+            
         }
 
     }
 
     fn view(&self) -> iced::Element<'_, Message> {
-        let controls ={
-            button("Open").on_press(Message::Open)
-        };
+        let controls =row!{
+            button("Open").on_press(Message::Open),
+            button("New").on_press(Message::New),
+        }.spacing(10);
         let input_content = text_editor(&self.content)
             .on_action(Message::Edit)
-            .height(Length::Fill)
-            .into();
+            .height(Length::Fill);
+            
         let poisition = {
         let (line, column) = &self.content.cursor_position();
         text(format!("{}:{}", line + 1, column + 1))
@@ -90,12 +97,6 @@ impl Application for Editor{
         1.0
     }
     
-    fn run(settings: Settings<()>) -> Result<(), iced::Error>
-    where
-        Self: 'static + Sized,
-    {
-        <Self as iced::Application>::run(settings)
-    }
 }
 
 #[derive(Debug,Clone)]
