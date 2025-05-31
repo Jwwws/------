@@ -158,10 +158,6 @@ impl Editor {
         let status_bar = row!(file_path, horizontal_space(), position);
         container(column![controls, input_content, status_bar]).padding(10).into()
 
-        // let text1 = text("text");
-        // let text2 = text("text");
-        // let text3 = text("text");
-        // container(row!(text1,horizontal_space(),text2,horizontal_space(),text3)).into()
 
     }
 
@@ -179,7 +175,7 @@ enum Error {
     IOFailed(ErrorKind),
     DialogClosed,
 }
-// &str String Pathbuf ...
+
 async fn load_file(path: impl AsRef<Path>) -> Result<(PathBuf, Arc<String>), Error> {
      let contents = tokio::fs::read_to_string(path.as_ref()).await
          .map(Arc::new)
@@ -191,14 +187,6 @@ fn default_load_file() -> PathBuf {
     PathBuf::from(format!("{}/src/main.rs", env!("CARGO_MANIFEST_DIR")))
 }
 
-// async fn pick_file() ->Result<(PathBuf, Arc<String>), Error> {
-//     let filehandle = rfd::AsyncFileDialog::new().set_title("Choose a file")
-//         .pick_file()
-//         .await
-//         .ok_or(Error::DialogClosed)?;
-
-//     load_file(filehandle.path().to_owned()).await
-// }
 
 async fn pick_file() ->Result<(PathBuf, Arc<String>), Error> {
     let file_path = rfd::AsyncFileDialog::new().set_title("Choose a file")
