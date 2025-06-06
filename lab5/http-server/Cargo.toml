@@ -1,6 +1,20 @@
 [package]
-name = "http-server"
+name = "rust-web-server"
 version = "0.1.0"
 edition = "2024"
 
+[[bin]]
+name = "single_threaded"
+path = "src/single_threaded.rs"
+
+[[bin]]
+name = "multi_threaded"
+path = "src/multi_threaded.rs"
+
+[[bin]]
+name = "async_server"
+path = "src/async_server.rs"
+
 [dependencies]
+nix = "0.27"
+tokio = { version = "1.0", features = ["full"] }
